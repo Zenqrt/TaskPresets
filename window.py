@@ -99,6 +99,7 @@ class Window(QMainWindow):
 
     def _on_click_create_task_preset_button(self):
         dialog = QInputDialog(self)
+        dialog.setWindowTitle("New Task Preset")
         dialog.setLabelText("Enter task preset name:")
         dialog.setFixedSize(300, 100)
         dialog.exec_()
@@ -116,15 +117,18 @@ class Window(QMainWindow):
 
     def _on_click_remove_task_preset_button(self):
         item = self.task_presets_list.currentItem()
+        task_preset = self.task_manager.get_task_preset_by_name(item.text())
         confirm_dialog = QMessageBox(self)
-        confirm_dialog.setText(f"Are you sure you want to delete the {item.text()} task preset?")
+        confirm_dialog.setWindowTitle("Delete Task Preset")
+        confirm_dialog.setText(f"Are you sure you want to delete the '{item.text()}' task preset?")
         confirm_dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         confirm_dialog.setDefaultButton(QMessageBox.No)
         confirm_dialog.setFixedSize(300, 100)
         confirm_dialog.exec_()
 
         if confirm_dialog.result() == QMessageBox.Yes:
-            self.task_manager.remove_task_preset(self.selected_task_preset)
+            self._delete_settings_panel_if_exists()
+            self.task_manager.remove_task_preset(task_preset)
             self.task_presets_list.takeItem(self.task_presets_list.row(item))
             self.task_manager.save_task_presets()
 
@@ -186,10 +190,13 @@ class Window(QMainWindow):
         self._show_task_preset_settings_panel()
 
     def _show_task_preset_settings_panel(self):
+        self._delete_settings_panel_if_exists()
+        self.selected_task_preset_settings_panel = self._create_selected_task_preset_settings_panel()
+
+    def _delete_settings_panel_if_exists(self):
         if self.selected_task_preset_settings_panel is not None:
             self.selected_task_preset_settings_panel.deleteLater()
-
-        self.selected_task_preset_settings_panel = self._create_selected_task_preset_settings_panel()
+            print("")
 
     def _create_selected_task_preset_settings_panel(self):
         if self.selected_task_preset is None:
