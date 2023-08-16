@@ -1,5 +1,6 @@
 import os
 import json
+import enum
 from dataclasses import dataclass
 
 
@@ -22,6 +23,7 @@ class TaskPreset:
     name: str
     tasks: list[Task]
     focus_mode: bool = False
+    close_every_task: str = "never"
 
     def start_up(self):
         for task in self.tasks:
@@ -29,6 +31,15 @@ class TaskPreset:
 
         if self.focus_mode:
             self.focus()
+
+    def set_name(self, text: str):
+        self.name = text
+
+    def set_focus_mode(self, status: bool):
+        self.focus_mode = status
+
+    def set_close_every_task(self, option: str):
+        self.close_every_task = option
 
     def focus(self):
         pass
@@ -39,9 +50,6 @@ class TaskPreset:
     @staticmethod
     def decode(json_data: dict):
         return TaskPreset(json_data["name"], [Task(**task) for task in json_data["tasks"]], json_data["focus_mode"])
-
-    def set_focus_mode(self, status: bool):
-        self.focus_mode = status
 
 
 class TaskManagerError(Exception):
@@ -66,6 +74,10 @@ class TaskManager:
     def save_task_presets(self):
         with open(self.json_file_path, "w") as file:
             json.dump([task_preset.__dict__ for task_preset in self.task_presets], file, cls=TaskEncoder)
+
+    def save_task_preset(self, task_preset: TaskPreset):
+        with open(self.json_file_path, "w") as file:
+            json.dump(task_preset.__dict__, file, cls=TaskEncoder)
 
     def add_task_preset(self, task_preset: TaskPreset):
         self.task_presets.append(task_preset)

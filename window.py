@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+
+import task
 from task import *
 
 
@@ -33,10 +35,12 @@ def _toggle_read_only(widget: QWidget):
         widget.setStyleSheet("background-color: rgb(255, 255, 255);")
 
 
-def _create_option_section(panel: QWidget, name: str):
+def _create_option_section(panel: QWidget, name: str, value: str, function: callable):
     focus_mode_option = QComboBox(panel)
     focus_mode_option.addItems(["Never", "Always", "Always ask"])
+    focus_mode_option.setCurrentIndex(focus_mode_option.findText(value.capitalize()))
     focus_mode_option.setFixedSize(200, 20)
+    focus_mode_option.currentTextChanged.connect(lambda: function(focus_mode_option.currentText()))
 
     focus_mode_setting_section = _create_setting_section(panel, name, [focus_mode_option])
 
@@ -73,7 +77,6 @@ class Window(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Task Presets")
-        # self.setWindowIcon(QIcon("icon.png"))
         self.setFixedSize(800, 500)
 
         self.task_manager = TaskManager(file_path)
@@ -82,13 +85,43 @@ class Window(QMainWindow):
         self.menu_bar = self._create_menu_bar()
 
         self.operation_box = self._create_operation_box()
-        self.create_task_preset_button = self._create_task_creation_button()
-        self.remove_task_preset_button = self._create_task_remove_button()
-        self.copy_task_preset_button = self._create_task_copy_button()
+        self.create_task_preset_button = self._create_operation_button(function=self._on_click_create_task_preset_button,
+                                                                       name="+")
+        self.remove_task_preset_button = self._create_operation_button(function=self._on_click_remove_task_preset_button,
+                                                                       name="-", horizontal_position=20)
+        self.copy_task_preset_button = self._create_operation_button(function=lambda: print("clicked"),
+                                                                     name="O", horizontal_position=40)
         self.task_presets_list = self._create_task_presets_list()
 
-        self.selected_task_preset_settings_panel = None
+        self.selected_task_preset_settings_panel: TaskPresetEditPanel = None
+        self.selected_item_list: QListWidgetItem = None
         self.show()
+
+    def _on_click_create_task_preset_button(self):
+        dialog = QInputDialog(self)
+        dialog.setLabelText("Enter task preset name:")
+        dialog.setFixedSize(300, 100)
+        dialog.exec_()
+        task_preset_name = dialog.textValue()
+
+        if task_preset_name != "":
+            task_preset = TaskPreset(task_preset_name, [])
+            self.task_presets_list.addItem(task_preset_name)
+            self.task_manager.task_presets.append(task_preset)
+            self.task_manager.save_task_presets()
+
+    def _on_click_remove_task_preset_button(self):
+        confirm_dialog = QMessageBox(self)
+        confirm_dialog.setText("Are you sure you want to delete this task preset?")
+        confirm_dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        confirm_dialog.setDefaultButton(QMessageBox.No)
+        confirm_dialog.setFixedSize(300, 100)
+        confirm_dialog.exec_()
+
+        if confirm_dialog.result() == QMessageBox.Yes:
+            self.task_manager.remove_task_preset(self.selected_task_preset)
+            self.task_presets_list.takeItem(self.task_presets_list.row(self.selected_item_list))
+            self.task_manager.save_task_presets()
 
     def _create_menu_bar(self):
         menu_bar = QMenuBar(self)
@@ -103,15 +136,6 @@ class Window(QMainWindow):
         file_menu.addAction(settings_menu_action)
 
         return menu_bar
-
-    def _create_task_creation_button(self):
-        return self._create_operation_button(function=lambda: print("clicked"), name="+")
-
-    def _create_task_remove_button(self):
-        return self._create_operation_button(function=lambda: print("clicked"), name="-", horizontal_position=20)
-
-    def _create_task_copy_button(self):
-        return self._create_operation_button(function=lambda: print("clicked"), name="O", horizontal_position=40)
 
     def _create_operation_button(self, function: callable, name: str = "", icon: QIcon = None,
                                  horizontal_position: int = 0):
@@ -170,72 +194,6 @@ class Window(QMainWindow):
         widget.show()
         return widget
 
-    def _create_settings_panel_layout(self, panel: QWidget):
-        layout = QVBoxLayout(self)
-
-        layout.addWidget(_create_settings_header_panel(panel))
-        layout.addSpacing(20)
-
-        layout.addWidget(self._create_name_setting_section(panel))
-        layout.addWidget(_create_option_section(panel, "Exit every other program?"))
-        layout.addWidget(self._create_focus_mode_setting_section(panel))
-
-        layout.addSpacing(20)
-        layout.addWidget(self._create_tasks_setting_section(panel))
-
-        layout.addSpacing(40)
-
-        return layout
-
-    def _create_name_setting_section(self, panel: QWidget):
-        name_input = QLineEdit(panel)
-        name_input.setText(self.selected_task_preset.name)
-        name_input.setFixedSize(200, 20)
-
-        name_setting_section = _create_setting_section(panel, "Name", [name_input])
-
-        return name_setting_section
-
-    def _create_focus_mode_setting_section(self, panel: QWidget):
-        focus_mode_checkbox = QCheckBox(panel)
-        focus_mode_checkbox.setChecked(self.selected_task_preset.focus_mode)
-        focus_mode_checkbox.stateChanged.connect(lambda: print("clicked"))
-
-        focus_mode_setting_section = _create_setting_section(panel, "Focus mode", [focus_mode_checkbox])
-
-        return focus_mode_setting_section
-
-    def _create_tasks_setting_section(self, panel: QWidget):
-        add_new_task_button = QPushButton(panel)
-        add_new_task_button.setText("Add new task")
-        add_new_task_button.setFixedSize(200, 20)
-        add_new_task_button.clicked.connect(lambda: print("clicked"))
-
-        setting_widgets = [self._create_task_setting(panel, task) for task in self.selected_task_preset.tasks]
-        setting_widgets.append(add_new_task_button)
-
-        tasks_setting_section = _create_setting_section(panel, "Tasks", setting_widgets)
-
-        return tasks_setting_section
-
-    def _create_task_setting(self, panel: QWidget, task: Task):
-        task_choice = QComboBox(panel)
-        task_choice.addItems([task.name])
-
-        remove_button = QPushButton(panel)
-        remove_button.setText("-")
-        remove_button.setFixedSize(20, 20)
-        remove_button.clicked.connect(lambda: print("clicked"))
-
-        task_setting = QWidget(panel)
-        task_setting_layout = QHBoxLayout(panel)
-        task_setting_layout.setDirection(QBoxLayout.LeftToRight)
-        task_setting_layout.addWidget(task_choice)
-        task_setting_layout.addWidget(remove_button)
-        task_setting.setLayout(task_setting_layout)
-
-        return task_setting
-
 
 class TaskPresetEditPanel(QWidget):
 
@@ -243,6 +201,8 @@ class TaskPresetEditPanel(QWidget):
         super().__init__(parent)
 
         self.task_preset = task_preset
+        self.original_name = task_preset.name
+        self.name_changed = False
 
         self.setGeometry(200, 0, 600, 500)
         self._init_ui()
@@ -297,7 +257,7 @@ class TaskPresetEditPanel(QWidget):
         layout.addSpacing(20)
 
         layout.addWidget(self._create_name_setting_section())
-        layout.addWidget(_create_option_section(parent, "Exit every other program?"))
+        layout.addWidget(_create_option_section(parent, "Exit every other program?", self.task_preset.close_every_task, lambda option: self.task_preset.set_close_every_task(option.lower())))
         layout.addWidget(self._create_focus_mode_setting_section())
 
         layout.addSpacing(20)
@@ -311,10 +271,15 @@ class TaskPresetEditPanel(QWidget):
         name_input = QLineEdit(self)
         name_input.setText(self.task_preset.name)
         name_input.setFixedSize(200, 20)
+        name_input.textChanged.connect(lambda: self._on_text_changed(name_input.text()))
 
         name_setting_section = _create_setting_section(self, "Name", [name_input])
 
         return name_setting_section
+
+    def _on_text_changed(self, text: str):
+        self.task_preset.set_name(text)
+        self.name_changed = True
 
     def _create_focus_mode_setting_section(self):
         focus_mode_checkbox = QCheckBox(self)
