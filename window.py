@@ -226,8 +226,9 @@ class TaskPresetEditPanel(QWidget):
         self.task_preset = task_preset
         self.original_name = task_preset.name
         self.name_changed = False
+        self.needs_saving = False
 
-        self.setGeometry(200, 0, 600, 500)
+        self.setGeometry(200, 20, 600, 500)
         self._init_ui()
 
     def _init_ui(self):
@@ -239,13 +240,13 @@ class TaskPresetEditPanel(QWidget):
 
     def _create_scroll_area(self):
         scroll_area = QScrollArea(self)
-        scroll_area.setFixedSize(600, 460)
+        scroll_area.setFixedSize(600, 440)
 
         return scroll_area
 
     def _create_settings_buttons(self):
         buttons_widget = QWidget(self)
-        buttons_widget.setGeometry(0, 460, 600, 40)
+        buttons_widget.setGeometry(0, 440, 600, 40)
 
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.setDirection(QBoxLayout.LeftToRight)
@@ -255,11 +256,11 @@ class TaskPresetEditPanel(QWidget):
         run_button.setFixedSize(80, 30)
         run_button.clicked.connect(lambda: self.task_preset.start_up())
 
-        save_button = QPushButton("Save", buttons_widget)
-        save_button.setFixedSize(80, 30)
-        save_button.clicked.connect(lambda: self.task_manager.save_task_presets())
+        self.save_button = QPushButton("Save", buttons_widget)
+        self.save_button.setFixedSize(80, 30)
+        self.save_button.clicked.connect(lambda: self.task_manager.save_task_presets())
 
-        buttons_layout.addWidget(save_button)
+        buttons_layout.addWidget(self.save_button)
         buttons_layout.addWidget(run_button)
 
         buttons_widget.setLayout(buttons_layout)
