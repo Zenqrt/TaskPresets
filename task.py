@@ -41,6 +41,14 @@ class TaskPreset:
     def set_close_every_task(self, option: str):
         self.close_every_task = option
 
+    def remove_task_by_name(self, task_name: str):
+        for task in self.tasks:
+            if task.name == task_name:
+                self.tasks.remove(task)
+                return
+
+        raise TaskManagerError(f"Task with name {task_name} does not exist!")
+
     def focus(self):
         pass
 

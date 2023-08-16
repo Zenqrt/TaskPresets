@@ -115,22 +115,32 @@ class Window(QMainWindow):
             self.task_manager.task_presets.append(task_preset)
             self.task_manager.save_task_presets()
 
+            self._select_task_preset(self.task_presets_list.itemFromIndex(self.task_presets_list.model().index(self.task_presets_list.count() - 1, 0)))
+
     def _on_click_remove_task_preset_button(self):
         item = self.task_presets_list.currentItem()
         task_preset = self.task_manager.get_task_preset_by_name(item.text())
+
+        confirm_dialog = self._create_confirmation_dialog("Delete Task Preset", f"Are you sure you want to delete the '{item.text()}' task preset?")
+
+        if confirm_dialog.result() == QMessageBox.Yes:
+            self._delete_settings_panel_if_exists()
+            self.selected_task_preset_settings_panel = None
+
+            self.task_manager.remove_task_preset(task_preset)
+            self.task_presets_list.takeItem(self.task_presets_list.row(item))
+            self.task_manager.save_task_presets()
+
+    def _create_confirmation_dialog(self, title: str, text: str) -> QMessageBox:
         confirm_dialog = QMessageBox(self)
-        confirm_dialog.setWindowTitle("Delete Task Preset")
-        confirm_dialog.setText(f"Are you sure you want to delete the '{item.text()}' task preset?")
+        confirm_dialog.setWindowTitle(title)
+        confirm_dialog.setText(text)
         confirm_dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         confirm_dialog.setDefaultButton(QMessageBox.No)
         confirm_dialog.setFixedSize(300, 100)
         confirm_dialog.exec_()
 
-        if confirm_dialog.result() == QMessageBox.Yes:
-            self._delete_settings_panel_if_exists()
-            self.task_manager.remove_task_preset(task_preset)
-            self.task_presets_list.takeItem(self.task_presets_list.row(item))
-            self.task_manager.save_task_presets()
+        return confirm_dialog
 
     def _create_menu_bar(self):
         menu_bar = QMenuBar(self)
@@ -170,24 +180,25 @@ class Window(QMainWindow):
     def _create_task_presets_list(self):
         task_presets_list = QListWidget(self)
         task_presets_list.setGeometry(0, 40, 200, 500)
-        task_presets_list.itemDoubleClicked.connect(self._on_click_task_presets_list)
+        task_presets_list.itemDoubleClicked.connect(self._select_task_preset)
 
         task_presets_list.addItems([task_preset.name for task_preset in self.task_manager.task_presets])
 
         return task_presets_list
 
-    def _on_click_task_presets_list(self, item: QListWidgetItem):
+    def _select_task_preset(self, item: QListWidgetItem):
         task_preset = self.task_manager.get_task_preset_by_name(item.text())
-        self._select_task_preset(task_preset)
-        item.setBackground(QColor(200, 200, 200))
-
-        for index in range(self.task_presets_list.count()):
-            if self.task_presets_list.item(index) != item:
-                self.task_presets_list.item(index).setBackground(QColor(255, 255, 255))
-
-    def _select_task_preset(self, task_preset: TaskPreset):
         self.selected_task_preset = task_preset
+
         self._show_task_preset_settings_panel()
+        self._set_selection_colors(item)
+
+    def _set_selection_colors(self, item: QListWidgetItem):
+        if self.selected_item_list is not None:
+            self.selected_item_list.setBackground(QColor(255, 255, 255))
+
+        item.setBackground(QColor(200, 200, 200))
+        self.selected_item_list = item
 
     def _show_task_preset_settings_panel(self):
         self._delete_settings_panel_if_exists()
@@ -196,22 +207,22 @@ class Window(QMainWindow):
     def _delete_settings_panel_if_exists(self):
         if self.selected_task_preset_settings_panel is not None:
             self.selected_task_preset_settings_panel.deleteLater()
-            print("")
 
     def _create_selected_task_preset_settings_panel(self):
         if self.selected_task_preset is None:
             return
 
-        widget = TaskPresetEditPanel(self, self.selected_task_preset)
+        widget = TaskPresetEditPanel(self, self.task_manager, self.selected_task_preset)
         widget.show()
         return widget
 
 
 class TaskPresetEditPanel(QWidget):
 
-    def __init__(self, parent: QWidget, task_preset: TaskPreset):
+    def __init__(self, parent: QWidget, task_manager: TaskManager, task_preset: TaskPreset):
         super().__init__(parent)
 
+        self.task_manager = task_manager
         self.task_preset = task_preset
         self.original_name = task_preset.name
         self.name_changed = False
@@ -246,7 +257,7 @@ class TaskPresetEditPanel(QWidget):
 
         save_button = QPushButton("Save", buttons_widget)
         save_button.setFixedSize(80, 30)
-        save_button.clicked.connect(lambda: self.task_preset.save())
+        save_button.clicked.connect(lambda: self.task_manager.save_task_presets())
 
         buttons_layout.addWidget(save_button)
         buttons_layout.addWidget(run_button)
@@ -316,15 +327,15 @@ class TaskPresetEditPanel(QWidget):
         return tasks_setting_section
 
     def _create_task_setting(self, task: Task):
+        task_setting = QWidget(self)
         task_choice = QComboBox(self)
         task_choice.addItems([task.name])
 
         remove_button = QPushButton(self)
         remove_button.setText("-")
         remove_button.setFixedSize(20, 20)
-        remove_button.clicked.connect(lambda: print("clicked"))
+        remove_button.clicked.connect(lambda: self._on_click_remove_task_setting(task.name, task_setting))
 
-        task_setting = QWidget(self)
         task_setting_layout = QHBoxLayout(self)
         task_setting_layout.setDirection(QBoxLayout.LeftToRight)
         task_setting_layout.addWidget(task_choice)
@@ -332,3 +343,7 @@ class TaskPresetEditPanel(QWidget):
         task_setting.setLayout(task_setting_layout)
 
         return task_setting
+
+    def _on_click_remove_task_setting(self, task_name: str, task_setting: QWidget):
+        self.task_preset.remove_task_by_name(task_name)
+        task_setting.deleteLater()
