@@ -75,10 +75,6 @@ class TaskManager:
         with open(self.json_file_path, "w") as file:
             json.dump([task_preset.__dict__ for task_preset in self.task_presets], file, cls=TaskEncoder)
 
-    def save_task_preset(self, task_preset: TaskPreset):
-        with open(self.json_file_path, "w") as file:
-            json.dump(task_preset.__dict__, file, cls=TaskEncoder)
-
     def add_task_preset(self, task_preset: TaskPreset):
         self.task_presets.append(task_preset)
         self.save_task_presets()

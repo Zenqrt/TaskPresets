@@ -102,6 +102,10 @@ class Window(QMainWindow):
         dialog.setLabelText("Enter task preset name:")
         dialog.setFixedSize(300, 100)
         dialog.exec_()
+
+        if dialog.result() == 0:
+            return
+
         task_preset_name = dialog.textValue()
 
         if task_preset_name != "":
@@ -111,8 +115,9 @@ class Window(QMainWindow):
             self.task_manager.save_task_presets()
 
     def _on_click_remove_task_preset_button(self):
+        item = self.task_presets_list.currentItem()
         confirm_dialog = QMessageBox(self)
-        confirm_dialog.setText("Are you sure you want to delete this task preset?")
+        confirm_dialog.setText(f"Are you sure you want to delete the {item.text()} task preset?")
         confirm_dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         confirm_dialog.setDefaultButton(QMessageBox.No)
         confirm_dialog.setFixedSize(300, 100)
@@ -120,7 +125,7 @@ class Window(QMainWindow):
 
         if confirm_dialog.result() == QMessageBox.Yes:
             self.task_manager.remove_task_preset(self.selected_task_preset)
-            self.task_presets_list.takeItem(self.task_presets_list.row(self.selected_item_list))
+            self.task_presets_list.takeItem(self.task_presets_list.row(item))
             self.task_manager.save_task_presets()
 
     def _create_menu_bar(self):
