@@ -137,11 +137,21 @@ class Window(QMainWindow):
     def _create_task_presets_list(self):
         task_presets_list = QListWidget(self)
         task_presets_list.setGeometry(0, 40, 200, 500)
-        task_presets_list.itemDoubleClicked.connect(lambda item: self._select_task_preset(self.task_manager.get_task_preset_by_name(item.text())))
+        task_presets_list.itemDoubleClicked.connect(self._on_click_task_presets_list)
 
         task_presets_list.addItems([task_preset.name for task_preset in self.task_manager.task_presets])
 
         return task_presets_list
+
+    def _on_click_task_presets_list(self, item: QListWidgetItem):
+        task_preset = self.task_manager.get_task_preset_by_name(item.text())
+        self._select_task_preset(task_preset)
+        item.setBackground(QColor(200, 200, 200))
+
+        # set everything else to default color
+        for i in range(self.task_presets_list.count()):
+            if self.task_presets_list.item(i) != item:
+                self.task_presets_list.item(i).setBackground(QColor(255, 255, 255))
 
     def _select_task_preset(self, task_preset: TaskPreset):
         self.selected_task_preset = task_preset
