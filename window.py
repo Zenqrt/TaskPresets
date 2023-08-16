@@ -148,10 +148,9 @@ class Window(QMainWindow):
         self._select_task_preset(task_preset)
         item.setBackground(QColor(200, 200, 200))
 
-        # set everything else to default color
-        for i in range(self.task_presets_list.count()):
-            if self.task_presets_list.item(i) != item:
-                self.task_presets_list.item(i).setBackground(QColor(255, 255, 255))
+        for index in range(self.task_presets_list.count()):
+            if self.task_presets_list.item(index) != item:
+                self.task_presets_list.item(index).setBackground(QColor(255, 255, 255))
 
     def _select_task_preset(self, task_preset: TaskPreset):
         self.selected_task_preset = task_preset
