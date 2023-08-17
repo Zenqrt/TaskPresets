@@ -1,3 +1,6 @@
+from time import sleep
+
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -78,6 +81,7 @@ class Window(QMainWindow):
 
         self.setWindowTitle("Task Presets")
         self.setFixedSize(800, 500)
+        self.closeEvent
 
         self.task_manager = TaskManager(file_path)
         self.selected_task_preset: TaskPreset = self.task_manager.task_presets[0]
@@ -96,6 +100,11 @@ class Window(QMainWindow):
         self.selected_task_preset_settings_panel: TaskPresetEditPanel = None
         self.selected_item_list: QListWidgetItem = None
         self.show()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        event.ignore()
+        self.task_manager.save_task_presets()
+        event.accept()
 
     def _on_click_create_task_preset_button(self):
         dialog = QInputDialog(self)
@@ -258,7 +267,8 @@ class TaskPresetEditPanel(QWidget):
 
         self.save_button = QPushButton("Save", buttons_widget)
         self.save_button.setFixedSize(80, 30)
-        self.save_button.clicked.connect(lambda: self.task_manager.save_task_presets())
+        self.save_button.setEnabled(False)
+        self.save_button.clicked.connect(self._on_click_save_button)
 
         buttons_layout.addWidget(self.save_button)
         buttons_layout.addWidget(run_button)
@@ -266,6 +276,14 @@ class TaskPresetEditPanel(QWidget):
         buttons_widget.setLayout(buttons_layout)
 
         return buttons_widget
+
+    def _set_needs_saving(self, status: bool):
+        self.needs_saving = status
+        self.save_button.setEnabled(status)
+
+    def _on_click_save_button(self):
+        self.task_manager.save_task_presets()
+        self._set_needs_saving(False)
 
     def _create_settings_panel(self):
         settings_panel = QWidget(self)
@@ -302,17 +320,22 @@ class TaskPresetEditPanel(QWidget):
         return name_setting_section
 
     def _on_text_changed(self, text: str):
+        self._set_needs_saving(True)
         self.task_preset.set_name(text)
         self.name_changed = True
 
     def _create_focus_mode_setting_section(self):
         focus_mode_checkbox = QCheckBox(self)
         focus_mode_checkbox.setChecked(self.task_preset.focus_mode)
-        focus_mode_checkbox.stateChanged.connect(lambda: self.task_preset.set_focus_mode(focus_mode_checkbox.isChecked()))
+        focus_mode_checkbox.stateChanged.connect(lambda: self._on_click_focus_mode_checkbox(focus_mode_checkbox.isChecked()))
 
         focus_mode_setting_section = _create_setting_section(self, "Focus mode", [focus_mode_checkbox])
 
         return focus_mode_setting_section
+
+    def _on_click_focus_mode_checkbox(self, checked: bool):
+        self._set_needs_saving(True)
+        self.task_preset.set_focus_mode(checked)
 
     def _create_tasks_setting_section(self):
         add_new_task_button = QPushButton(self)
@@ -346,5 +369,6 @@ class TaskPresetEditPanel(QWidget):
         return task_setting
 
     def _on_click_remove_task_setting(self, task_name: str, task_setting: QWidget):
+        self._set_needs_saving(True)
         self.task_preset.remove_task_by_name(task_name)
         task_setting.deleteLater()
