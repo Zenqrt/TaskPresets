@@ -57,7 +57,10 @@ class TaskPreset:
 
     @staticmethod
     def decode(json_data: dict):
-        return TaskPreset(json_data["name"], [Task(**task) for task in json_data["tasks"]], json_data["focus_mode"])
+        return TaskPreset(name=json_data["name"],
+                          tasks=[Task(**task) for task in json_data["tasks"]],
+                          focus_mode=json_data["focus_mode"],
+                          close_every_task=json_data["close_every_task"])
 
 
 class TaskManagerError(Exception):

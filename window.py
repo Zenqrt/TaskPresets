@@ -81,7 +81,6 @@ class Window(QMainWindow):
 
         self.setWindowTitle("Task Presets")
         self.setFixedSize(800, 500)
-        self.closeEvent
 
         self.task_manager = TaskManager(file_path)
         self.selected_task_preset: TaskPreset = self.task_manager.task_presets[0]
@@ -299,7 +298,7 @@ class TaskPresetEditPanel(QWidget):
         layout.addSpacing(20)
 
         layout.addWidget(self._create_name_setting_section())
-        layout.addWidget(_create_option_section(parent, "Exit every other program?", self.task_preset.close_every_task, lambda option: self.task_preset.set_close_every_task(option.lower())))
+        layout.addWidget(_create_option_section(parent, "Exit every other program?", self.task_preset.close_every_task, self._on_choose_close_every_task_option))
         layout.addWidget(self._create_focus_mode_setting_section())
 
         layout.addSpacing(20)
@@ -318,6 +317,10 @@ class TaskPresetEditPanel(QWidget):
         name_setting_section = _create_setting_section(self, "Name", [name_input])
 
         return name_setting_section
+
+    def _on_choose_close_every_task_option(self, option):
+        self._set_needs_saving(True)
+        self.task_preset.set_close_every_task(option)
 
     def _on_text_changed(self, text: str):
         self._set_needs_saving(True)
@@ -352,8 +355,8 @@ class TaskPresetEditPanel(QWidget):
 
     def _create_task_setting(self, task: Task):
         task_setting = QWidget(self)
-        task_choice = QComboBox(self)
-        task_choice.addItems([task.name])
+
+        execution_file_input = QLineEdit(self)
 
         remove_button = QPushButton(self)
         remove_button.setText("-")
