@@ -1,16 +1,22 @@
-from time import sleep
+import uuid
 
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-import task
 from task import *
 
 
 # TODO: add settings window
 # TODO: add menu bar with settings button
+
+def _unimplemented():
+    notification_window = QMessageBox()
+    notification_window.setWindowTitle("Unimplemented")
+    notification_window.setText("This feature is not yet implemented.")
+    notification_window.exec_()
+
 def _create_settings_header_panel(selected_task_preset_settings_panel: QWidget):
     header_panel = QWidget(selected_task_preset_settings_panel)
     header_panel_layout = QHBoxLayout(header_panel)
@@ -53,7 +59,7 @@ def _create_option_section(panel: QWidget, name: str, value: str, function: call
 def _create_setting_section(panel: QWidget, name: str, setting_widgets: list[QWidget]):
     setting_section = QWidget(panel)
 
-    setting_section_layout = QVBoxLayout(panel)
+    setting_section_layout = QHBoxLayout(panel)
     setting_section_layout.setDirection(QBoxLayout.TopToBottom)
 
     header_label = QLabel(panel)
@@ -83,17 +89,20 @@ class Window(QMainWindow):
         self.setFixedSize(800, 500)
 
         self.task_manager = TaskManager(file_path)
-        self.selected_task_preset: TaskPreset = self.task_manager.task_presets[0]
+        self.selected_task_preset: TaskPreset = None
 
         self.menu_bar = self._create_menu_bar()
 
         self.operation_box = self._create_operation_box()
         self.create_task_preset_button = self._create_operation_button(function=self._on_click_create_task_preset_button,
-                                                                       name="+")
+                                                                       name="+",
+                                                                       tooltip="Add new task preset")
         self.remove_task_preset_button = self._create_operation_button(function=self._on_click_remove_task_preset_button,
-                                                                       name="-", horizontal_position=20)
-        self.copy_task_preset_button = self._create_operation_button(function=lambda: print("clicked"),
-                                                                     name="O", horizontal_position=40)
+                                                                       name="-", horizontal_position=20,
+                                                                       tooltip="Remove selected task preset")
+        self.copy_task_preset_button = self._create_operation_button(function=_unimplemented,
+                                                                     name="O", horizontal_position=40,
+                                                                     tooltip="Copy selected task preset")
         self.task_presets_list = self._create_task_presets_list()
 
         self.selected_task_preset_settings_panel: TaskPresetEditPanel = None
@@ -127,6 +136,10 @@ class Window(QMainWindow):
 
     def _on_click_remove_task_preset_button(self):
         item = self.task_presets_list.currentItem()
+
+        if item is None:
+            return
+
         task_preset = self.task_manager.get_task_preset_by_name(item.text())
 
         confirm_dialog = self._create_confirmation_dialog("Delete Task Preset", f"Are you sure you want to delete the '{item.text()}' task preset?")
@@ -164,7 +177,7 @@ class Window(QMainWindow):
 
         return menu_bar
 
-    def _create_operation_button(self, function: callable, name: str = "", icon: QIcon = None,
+    def _create_operation_button(self, function: callable, name: str = "", tooltip: str = None, icon: QIcon = None,
                                  horizontal_position: int = 0):
         operation_button = QPushButton(name, self)
 
@@ -172,6 +185,7 @@ class Window(QMainWindow):
             operation_button.setIcon(icon)
             operation_button.setIconSize(QSize(20, 20))
 
+        operation_button.setToolTip(tooltip)
         operation_button.setGeometry(horizontal_position, 20, 20, 20)
         operation_button.clicked.connect(function)
 
@@ -242,13 +256,14 @@ class TaskPresetEditPanel(QWidget):
     def _init_ui(self):
         self._create_settings_buttons()
         scroll_area = self._create_scroll_area()
-        settings_panel = self._create_settings_panel()
+        self.settings_panel = self._create_settings_panel()
 
-        scroll_area.setWidget(settings_panel)
+        scroll_area.setWidget(self.settings_panel)
 
     def _create_scroll_area(self):
         scroll_area = QScrollArea(self)
         scroll_area.setFixedSize(600, 440)
+        scroll_area.setWidgetResizable(True)
 
         return scroll_area
 
@@ -302,7 +317,9 @@ class TaskPresetEditPanel(QWidget):
         layout.addWidget(self._create_focus_mode_setting_section())
 
         layout.addSpacing(20)
-        layout.addWidget(self._create_tasks_setting_section())
+
+        self.task_setting_section = self._create_tasks_setting_section()
+        layout.addWidget(self.task_setting_section)
 
         layout.addSpacing(40)
 
@@ -312,6 +329,7 @@ class TaskPresetEditPanel(QWidget):
         name_input = QLineEdit(self)
         name_input.setText(self.task_preset.name)
         name_input.setFixedSize(200, 20)
+        name_input.setDisabled(True)
         name_input.textChanged.connect(lambda: self._on_text_changed(name_input.text()))
 
         name_setting_section = _create_setting_section(self, "Name", [name_input])
@@ -344,7 +362,7 @@ class TaskPresetEditPanel(QWidget):
         add_new_task_button = QPushButton(self)
         add_new_task_button.setText("Add new task")
         add_new_task_button.setFixedSize(200, 20)
-        add_new_task_button.clicked.connect(lambda: print("clicked"))
+        add_new_task_button.clicked.connect(self._on_click_add_new_task_button)
 
         setting_widgets = [self._create_task_setting(task) for task in self.task_preset.tasks]
         setting_widgets.append(add_new_task_button)
@@ -353,10 +371,25 @@ class TaskPresetEditPanel(QWidget):
 
         return tasks_setting_section
 
+    def _on_click_add_new_task_button(self):
+        task = Task(str(uuid.uuid1()), "")
+
+        self._set_needs_saving(True)
+        self.task_preset.add_task(task)
+
+        self._create_task_setting(task)
+
+        self.task_setting_section.deleteLater()
+        self.task_setting_section = self._create_tasks_setting_section()
+        self.settings_panel.layout().addWidget(self.task_setting_section)
+
     def _create_task_setting(self, task: Task):
         task_setting = QWidget(self)
 
         execution_file_input = QLineEdit(self)
+        execution_file_input.setText(task.execution_path)
+        execution_file_input.textChanged.connect(lambda: self._on_edit_execution_file(task, execution_file_input))
+        execution_file_input.setFixedSize(350, 20)
 
         remove_button = QPushButton(self)
         remove_button.setText("-")
@@ -365,11 +398,15 @@ class TaskPresetEditPanel(QWidget):
 
         task_setting_layout = QHBoxLayout(self)
         task_setting_layout.setDirection(QBoxLayout.LeftToRight)
-        task_setting_layout.addWidget(task_choice)
+        task_setting_layout.addWidget(execution_file_input)
         task_setting_layout.addWidget(remove_button)
         task_setting.setLayout(task_setting_layout)
 
         return task_setting
+
+    def _on_edit_execution_file(self, task: Task, execution_file_input: QLineEdit):
+        self._set_needs_saving(True)
+        task.execution_path = execution_file_input.text()
 
     def _on_click_remove_task_setting(self, task_name: str, task_setting: QWidget):
         self._set_needs_saving(True)
