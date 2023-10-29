@@ -1,21 +1,50 @@
 import os
 import json
+import shutil
 
 from dataclasses import dataclass
 
 
-@dataclass
 class Task:
     name: str
-    execution_path: str
 
     def start_up(self):
-        """Starts the task."""
-        if os.path.exists(self.execution_path):
-            if self.execution_path.endswith(".exe"):
-                os.startfile(self.execution_path)
-            else:
-                os.system(f"start \"{self.execution_path}\"")
+        pass
+
+
+class BrowserTask(Task):
+    def __init__(self, name: str, urls: list[str]):
+        super().__init__()
+
+        self.name = name
+        self.urls = urls
+
+    def start_up(self):
+        for url in self.urls:
+            os.system(f"start {url}")
+
+
+class CommandPromptTask(Task):
+    def __init__(self, name: str, commands: list[str]):
+        super().__init__()
+
+        self.name = name
+        self.commands = commands
+
+    def start_up(self):
+        for command in self.commands:
+            os.system(f"start cmd /k {command}")
+
+
+class SystemExecutableTask(Task):
+    def __init__(self, name: str, executable_path: str):
+        super().__init__()
+
+        self.name = name
+        self.executable_path = executable_path
+
+    def start_up(self):
+        os.system(f"start {self.executable_path}")
 
 
 class TaskEncoder(json.JSONEncoder):
@@ -88,7 +117,7 @@ class TaskPreset:
 class TaskManagerError(Exception):
 
     def __init__(self, message: str):
-        self.message = message
+        super().__init__(message)
 
 
 class TaskManager:
