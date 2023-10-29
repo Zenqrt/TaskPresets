@@ -7,5 +7,5 @@ from PyQt5.QtWidgets import QApplication
 file_path = "task_presets.json"
 
 app = QApplication(sys.argv)
-window = window.Window(file_path)
+window = window.Window()
 sys.exit(app.exec_())
