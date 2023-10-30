@@ -1,20 +1,42 @@
 module WindowsSystem
 
+open System.Drawing
 open Microsoft.Win32
 
-let installedApplications: RegistryKey list =
+type Application = {
+    Name: string
+    InstallationPath: string
+    IconBitmap: Bitmap option
+}
+
+let applicationFromRegistryKey (registryKey: RegistryKey) =
+    let displayName = registryKey.GetValue "DisplayName"
+    let displayIcon = registryKey.GetValue "DisplayIcon"
+
+    if displayName <> null && displayIcon <> null then
+        let displayNameString = displayName.ToString()
+        let displayIconPath = displayIcon.ToString().Replace("\"", "").Split(",")[0]
+
+        let iconBitmap =
+            try
+                Some(Icon.ExtractAssociatedIcon(displayIconPath).ToBitmap())
+            with _ ->
+                None
+
+        Some {
+            Name = displayNameString
+            InstallationPath = ""
+            IconBitmap = iconBitmap
+        }
+    else
+        None
+
+
+let installedApplications: Application list =
     let registryKey =
         Registry.LocalMachine.OpenSubKey @"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
 
-    let nameList = registryKey.GetSubKeyNames()
-
-    [ for name in nameList -> registryKey.OpenSubKey name ]
-
-let iterateInstalledApplications (func: RegistryKey -> unit) =
-    let registryKey = Registry.ClassesRoot.OpenSubKey @"Installer\Products"
-
-    let nameList = registryKey.GetSubKeyNames()
-
-    for name in nameList do
-        let subKey = registryKey.OpenSubKey name
-        func subKey
+    registryKey.GetSubKeyNames()
+    |> Seq.map registryKey.OpenSubKey
+    |> Seq.choose applicationFromRegistryKey
+    |> Seq.toList
