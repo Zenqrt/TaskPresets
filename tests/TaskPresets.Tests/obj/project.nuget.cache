@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "o5CY0+ATLT50EgSc/oMVU7VH2M55t+D6ARoxWDpjQFCG2YFuiM8G6fztczbEjab2tG+7UD3dB3BqgDpzOQWHkA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\craft\\Documents\\Development\\GitHub\\TaskPresets\\tests\\TaskPresets.Tests\\TaskPresets.Tests.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\craft\\.nuget\\packages\\expecto\\10.1.0\\expecto.10.1.0.nupkg.sha512",
+    "C:\\Users\\craft\\.nuget\\packages\\fsharp.core\\7.0.400\\fsharp.core.7.0.400.nupkg.sha512",
+    "C:\\Users\\craft\\.nuget\\packages\\mono.cecil\\0.11.4\\mono.cecil.0.11.4.nupkg.sha512"
+  ],
+  "logs": []
+}
