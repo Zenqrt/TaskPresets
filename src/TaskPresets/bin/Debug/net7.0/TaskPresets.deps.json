@@ -11,7 +11,8 @@
           "Avalonia.Desktop": "11.0.0",
           "Avalonia.FuncUI": "1.0.0",
           "Avalonia.Themes.Fluent": "11.0.0",
-          "FSharp.Core": "7.0.400"
+          "FSharp.Core": "7.0.400",
+          "Semi.Avalonia": "11.0.1"
         },
         "runtime": {
           "TaskPresets.dll": {}
@@ -361,6 +362,17 @@
           }
         }
       },
+      "Semi.Avalonia/11.0.1": {
+        "dependencies": {
+          "Avalonia": "11.0.0"
+        },
+        "runtime": {
+          "lib/net6.0/Semi.Avalonia.dll": {
+            "assemblyVersion": "11.0.1.0",
+            "fileVersion": "11.0.1.0"
+          }
+        }
+      },
       "SkiaSharp/2.88.3": {
         "dependencies": {
           "SkiaSharp.NativeAssets.Win32": "2.88.3",
@@ -629,6 +641,13 @@
       "sha512": "sha512-hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A==",
       "path": "microsoft.win32.systemevents/6.0.0",
       "hashPath": "microsoft.win32.systemevents.6.0.0.nupkg.sha512"
+    },
+    "Semi.Avalonia/11.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-iswElH/UtuJq9C2p6W1xiKbt0cPMm/TdukbMKAKIhYMaFwPDxv/+yNSanOkbKF/cY84jYd9lp+cFufh9vmN5UQ==",
+      "path": "semi.avalonia/11.0.1",
+      "hashPath": "semi.avalonia.11.0.1.nupkg.sha512"
     },
     "SkiaSharp/2.88.3": {
       "type": "package",

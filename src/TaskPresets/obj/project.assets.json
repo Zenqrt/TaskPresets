@@ -467,6 +467,18 @@
           }
         }
       },
+      "Semi.Avalonia/11.0.1": {
+        "type": "package",
+        "dependencies": {
+          "Avalonia": "11.0.0"
+        },
+        "compile": {
+          "lib/net6.0/Semi.Avalonia.dll": {}
+        },
+        "runtime": {
+          "lib/net6.0/Semi.Avalonia.dll": {}
+        }
+      },
       "SkiaSharp/2.88.3": {
         "type": "package",
         "dependencies": {
@@ -1279,6 +1291,19 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "Semi.Avalonia/11.0.1": {
+      "sha512": "iswElH/UtuJq9C2p6W1xiKbt0cPMm/TdukbMKAKIhYMaFwPDxv/+yNSanOkbKF/cY84jYd9lp+cFufh9vmN5UQ==",
+      "type": "package",
+      "path": "semi.avalonia/11.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net6.0/Semi.Avalonia.dll",
+        "lib/netstandard2.0/Semi.Avalonia.dll",
+        "semi.avalonia.11.0.1.nupkg.sha512",
+        "semi.avalonia.nuspec"
+      ]
+    },
     "SkiaSharp/2.88.3": {
       "sha512": "GG8X3EdfwyBfwjl639UIiOVOKEdeoqDgYrz0P1MUCnefXt9cofN+AK8YB/v1+5cLMr03ieWCQdDmPqnFIzSxZw==",
       "type": "package",
@@ -1670,7 +1695,8 @@
       "Avalonia.Desktop >= 11.0.0",
       "Avalonia.FuncUI >= 1.0.0",
       "Avalonia.Themes.Fluent >= 11.0.0",
-      "FSharp.Core >= 7.0.400"
+      "FSharp.Core >= 7.0.400",
+      "Semi.Avalonia >= 11.0.1"
     ]
   },
   "packageFolders": {
@@ -1725,6 +1751,11 @@
             "include": "Runtime, Compile, Build, Native, Analyzers, BuildTransitive",
             "target": "Package",
             "version": "[7.0.400, )",
+            "generatePathProperty": true
+          },
+          "Semi.Avalonia": {
+            "target": "Package",
+            "version": "[11.0.1, )",
             "generatePathProperty": true
           }
         },

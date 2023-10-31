@@ -11,6 +11,7 @@ open Avalonia.Layout
 open System
 open Avalonia.Animation
 open Avalonia.Input
+open Semi.Avalonia
 open Tasks
 
 let unimplemented _ =
@@ -37,7 +38,6 @@ let fileMenuItem (header: string) (func: Interactivity.RoutedEventArgs -> unit) 
 let newTaskPresetView () =
     Component(fun _ ->
         DockPanel.create [
-            DockPanel.background "#0a0a0a"
             DockPanel.children [
                 StackPanel.create [
                     StackPanel.verticalAlignment VerticalAlignment.Center
@@ -138,7 +138,16 @@ type App() =
     inherit Avalonia.Application()
 
     override this.Initialize() =
-        this.Styles.Add(FluentTheme())
+        let theme = FluentTheme()
+
+        let darkColorPaletteResources = ColorPaletteResources()
+        darkColorPaletteResources.RegionColor <- Media.Color.FromRgb(byte 20, byte 20, byte 20)
+
+        theme.Palettes.Add(
+            Collections.Generic.KeyValuePair.Create(Styling.ThemeVariant.Dark, darkColorPaletteResources)
+        )
+
+        this.Styles.Add theme
         this.RequestedThemeVariant <- Styling.ThemeVariant.Dark
 
     override this.OnFrameworkInitializationCompleted() =

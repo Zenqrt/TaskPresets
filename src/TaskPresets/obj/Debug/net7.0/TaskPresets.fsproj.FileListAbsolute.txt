@@ -78,3 +78,4 @@ C:\Users\craft\Documents\Development\GitHub\TaskPresets\src\TaskPresets\obj\Debu
 C:\Users\craft\Documents\Development\GitHub\TaskPresets\src\TaskPresets\obj\Debug\net7.0\TaskPresets.pdb
 C:\Users\craft\Documents\Development\GitHub\TaskPresets\src\TaskPresets\obj\Debug\net7.0\TaskPresets.genruntimeconfig.cache
 C:\Users\craft\Documents\Development\GitHub\TaskPresets\src\TaskPresets\obj\Debug\net7.0\ref\TaskPresets.dll
+C:\Users\craft\Documents\Development\GitHub\TaskPresets\src\TaskPresets\bin\Debug\net7.0\Semi.Avalonia.dll

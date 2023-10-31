@@ -14,13 +14,14 @@
   </ItemGroup>
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Import Project="$(NuGetPackageRoot)skiasharp.nativeassets.webassembly\2.88.3\buildTransitive\netstandard1.0\SkiaSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)skiasharp.nativeassets.webassembly\2.88.3\buildTransitive\netstandard1.0\SkiaSharp.NativeAssets.WebAssembly.props')" />
-    <Import Project="$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\2.8.2.3\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\2.8.2.3\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props')" />
     <Import Project="$(NuGetPackageRoot)avalonia\11.0.0\buildTransitive\Avalonia.props" Condition="Exists('$(NuGetPackageRoot)avalonia\11.0.0\buildTransitive\Avalonia.props')" />
+    <Import Project="$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\2.8.2.3\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\2.8.2.3\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <PkgFSharp_Core Condition=" '$(PkgFSharp_Core)' == '' ">C:\Users\craft\.nuget\packages\fsharp.core\7.0.400</PkgFSharp_Core>
     <PkgAvalonia_BuildServices Condition=" '$(PkgAvalonia_BuildServices)' == '' ">C:\Users\craft\.nuget\packages\avalonia.buildservices\0.0.28</PkgAvalonia_BuildServices>
     <PkgAvalonia Condition=" '$(PkgAvalonia)' == '' ">C:\Users\craft\.nuget\packages\avalonia\11.0.0</PkgAvalonia>
+    <PkgSemi_Avalonia Condition=" '$(PkgSemi_Avalonia)' == '' ">C:\Users\craft\.nuget\packages\semi.avalonia\11.0.1</PkgSemi_Avalonia>
+    <PkgFSharp_Core Condition=" '$(PkgFSharp_Core)' == '' ">C:\Users\craft\.nuget\packages\fsharp.core\7.0.400</PkgFSharp_Core>
     <PkgAvalonia_Themes_Fluent Condition=" '$(PkgAvalonia_Themes_Fluent)' == '' ">C:\Users\craft\.nuget\packages\avalonia.themes.fluent\11.0.0</PkgAvalonia_Themes_Fluent>
     <PkgAvalonia_FuncUI Condition=" '$(PkgAvalonia_FuncUI)' == '' ">C:\Users\craft\.nuget\packages\avalonia.funcui\1.0.0</PkgAvalonia_FuncUI>
     <PkgAvalonia_Desktop Condition=" '$(PkgAvalonia_Desktop)' == '' ">C:\Users\craft\.nuget\packages\avalonia.desktop\11.0.0</PkgAvalonia_Desktop>
