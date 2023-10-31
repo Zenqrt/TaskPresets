@@ -30,9 +30,10 @@ let private taskPresetsSidebarView (selectedPreset: IWritable<TaskPreset option>
                 DockPanel.create [ DockPanel.children [ TextBlock.create [ TextBlock.text taskPreset.Name ] ] ])
         )
 
-        ListBox.onSelectedItemChanged (fun taskPreset ->
-            if taskPreset :? TaskPreset then
-                selectedPreset.Set(Some(taskPreset :?> TaskPreset)))
+        ListBox.onSelectedItemChanged (fun item ->
+            match item with
+            | :? TaskPreset as taskPreset -> selectedPreset.Set(Some taskPreset)
+            | _ -> ())
     ]
 
 let private settingsView (title: string) (view: Types.IView) =
@@ -59,15 +60,19 @@ let private generalSettingsView (taskPreset: TaskPreset) =
                 ToggleSwitch.create [
                     ToggleSwitch.content "Close other applications"
                     ToggleSwitch.isChecked taskPreset.CloseOtherApplications
-                    ToggleSwitch.onChecked unimplemented
-                    ToggleSwitch.onUnchecked unimplemented
+                    ToggleSwitch.onChecked (fun _ ->
+                        updateTaskPreset taskPreset { taskPreset with CloseOtherApplications = true })
+                    ToggleSwitch.onUnchecked (fun _ ->
+                        updateTaskPreset taskPreset { taskPreset with CloseOtherApplications = false })
                 ]
 
                 ToggleSwitch.create [
                     ToggleSwitch.content "Disable opening of other applications"
                     ToggleSwitch.isChecked taskPreset.DisableOpeningOtherApplications
-                    ToggleSwitch.onChecked unimplemented
-                    ToggleSwitch.onUnchecked unimplemented
+                    ToggleSwitch.onChecked (fun _ ->
+                        updateTaskPreset taskPreset { taskPreset with DisableOpeningOtherApplications = true })
+                    ToggleSwitch.onUnchecked (fun _ ->
+                        updateTaskPreset taskPreset { taskPreset with DisableOpeningOtherApplications = false })
                 ]
 
                 Button.create [
@@ -117,6 +122,15 @@ let private exceptionApplicationsView (taskPreset: TaskPreset) (hideNotification
                             )
                         ])
                 )
+                ComboBox.onSelectedItemChanged (fun object ->
+                    match object with
+                    | :? NotificationExceptionType as notificationExceptionType ->
+                        if notificationExceptionType <> taskPreset.NotificationExceptionType then
+                            updateTaskPreset taskPreset {
+                                taskPreset with
+                                    NotificationExceptionType = notificationExceptionType
+                            }
+                    | _ -> ())
 
                 ComboBox.selectedItem taskPreset.NotificationExceptionType
             ]
@@ -150,8 +164,12 @@ let private notificationSettingsView (taskPreset: TaskPreset) =
                         ToggleSwitch.create [
                             ToggleSwitch.content "Hide Notifications"
                             ToggleSwitch.isChecked taskPreset.HideNotifications
-                            ToggleSwitch.onChecked (fun _ -> hideNotificationsState.Set true)
-                            ToggleSwitch.onUnchecked (fun _ -> hideNotificationsState.Set false)
+                            ToggleSwitch.onChecked (fun _ ->
+                                hideNotificationsState.Set true
+                                updateTaskPreset taskPreset { taskPreset with HideNotifications = true })
+                            ToggleSwitch.onUnchecked (fun _ ->
+                                updateTaskPreset taskPreset { taskPreset with HideNotifications = false }
+                                hideNotificationsState.Set false)
                         ]
 
                         exceptionApplicationsView taskPreset hideNotificationsState

@@ -26,11 +26,6 @@ module Async =
             return f a
         }
 
-let private mainWindow: Window option =
-    match Application.Current.ApplicationLifetime with
-    | :? IClassicDesktopStyleApplicationLifetime as applicationLifeTime -> Some applicationLifeTime.MainWindow
-    | _ -> None
-
 let private applicationSearchView (searchQuery: IWritable<string>) =
     TextBox.create [
         TextBox.horizontalAlignment HorizontalAlignment.Left
@@ -154,6 +149,6 @@ let applicationSelectionWindow () =
     window.Height <- 500
     window.Content <- applicationSelectionView window
 
-    match mainWindow with
+    match Views.mainWindow with
     | Some mainWindow -> window.ShowDialog mainWindow
     | None -> null

@@ -32,3 +32,8 @@ let iconButtonWithLabelView (label: string) (icon: Types.IView) (func: Interacti
             ]
         ]
     ]
+
+let mainWindow: Window option =
+    match Application.Current.ApplicationLifetime with
+    | :? IClassicDesktopStyleApplicationLifetime as applicationLifeTime -> Some applicationLifeTime.MainWindow
+    | _ -> None

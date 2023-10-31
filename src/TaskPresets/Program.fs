@@ -11,6 +11,7 @@ open Avalonia.Layout
 open System
 open Avalonia.Animation
 open Avalonia.Input
+open Tasks
 
 let unimplemented _ =
     printfn "This function is not implemented."
@@ -33,13 +34,70 @@ let fileMenuItem (header: string) (func: Interactivity.RoutedEventArgs -> unit) 
         MenuItem.onClick func
     ]
 
+let newTaskPresetView () =
+    Component(fun _ ->
+        DockPanel.create [
+            DockPanel.background "#0a0a0a"
+            DockPanel.children [
+                StackPanel.create [
+                    StackPanel.verticalAlignment VerticalAlignment.Center
+                    StackPanel.spacing 20
+
+                    StackPanel.children [
+                        StackPanel.create [
+                            StackPanel.horizontalAlignment HorizontalAlignment.Center
+                            StackPanel.verticalAlignment VerticalAlignment.Center
+
+                            StackPanel.children [
+                                TextBlock.create [ TextBlock.text "Enter task preset name:" ]
+                                TextBox.create [
+                                    TextBox.horizontalAlignment HorizontalAlignment.Center
+                                    TextBox.width 200
+                                ]
+                            ]
+                        ]
+                        StackPanel.create [
+                            StackPanel.orientation Orientation.Horizontal
+                            StackPanel.horizontalAlignment HorizontalAlignment.Center
+                            StackPanel.spacing 10
+
+                            StackPanel.children [
+                                Button.create [
+                                    Button.width 100
+                                    Button.horizontalAlignment HorizontalAlignment.Right
+                                    Button.content "OK"
+                                ]
+                                Button.create [
+                                    Button.width 100
+                                    Button.horizontalAlignment HorizontalAlignment.Right
+                                    Button.content "Cancel"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ])
+
+let newTaskPresetWindow () =
+    let window = Window()
+    window.Title <- "New Task Preset"
+    window.CanResize <- false
+    window.Width <- 300
+    window.Height <- 150
+    window.Content <- newTaskPresetView ()
+
+    match Views.mainWindow with
+    | None -> null
+    | Some mainWindow -> window.ShowDialog mainWindow
 
 let fileMenu =
     MenuItem.create [
         MenuItem.header "File"
 
         MenuItem.viewItems [
-            fileMenuItemWithHotKey "New Task Preset" (KeyGesture(Key.N, KeyModifiers.Control)) unimplemented
+            fileMenuItemWithHotKey "New Task Preset" (KeyGesture(Key.N, KeyModifiers.Control)) (fun _ ->
+                ignore (newTaskPresetWindow ()))
             fileMenuItemWithHotKey "Save Task Preset" (KeyGesture(Key.S, KeyModifiers.Control)) unimplemented
             fileMenuItem "Import Task Presets" unimplemented
             fileMenuItem "Export Task Presets" unimplemented
@@ -77,7 +135,7 @@ type MainWindow() =
 
 
 type App() =
-    inherit Application()
+    inherit Avalonia.Application()
 
     override this.Initialize() =
         this.Styles.Add(FluentTheme())

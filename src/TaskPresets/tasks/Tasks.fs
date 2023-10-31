@@ -58,4 +58,13 @@ let dummyTaskPreset = {
 let startUpPreset (taskPreset: TaskPreset) =
     taskPreset.Tasks |> List.iter startUpTask
 
-let taskPresets: TaskPreset list = [ dummyTaskPreset ]
+let mutable taskPresets: TaskPreset list = [ dummyTaskPreset ]
+
+let updateTaskPreset (oldTaskPreset: TaskPreset) (newTaskPreset: TaskPreset) =
+    taskPresets <-
+        taskPresets
+        |> List.map (fun taskPreset ->
+            if taskPreset = oldTaskPreset then
+                newTaskPreset
+            else
+                taskPreset)
