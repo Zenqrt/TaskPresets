@@ -2,12 +2,7 @@ module WindowsSystem
 
 open System.Drawing
 open Microsoft.Win32
-
-type Application = {
-    Name: string
-    InstallationPath: string
-    IconBitmap: Bitmap option
-}
+open Tasks
 
 let applicationFromRegistryKey (registryKey: RegistryKey) =
     let displayName = registryKey.GetValue "DisplayName"

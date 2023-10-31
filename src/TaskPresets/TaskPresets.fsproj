@@ -6,8 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="WindowsSystem.fs" />
     <Compile Include="Views.fs" />
+    <Compile Include="tasks/Tasks.fs" />
+    <Compile Include="WindowsSystem.fs" />
+    <Compile Include="ApplicationViews.fs" />
+    <Compile Include="tasks/TaskViews.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
