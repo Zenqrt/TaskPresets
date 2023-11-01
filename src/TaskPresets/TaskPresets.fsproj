@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Async.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="tasks/Tasks.fs" />
     <Compile Include="WindowsSystem.fs" />

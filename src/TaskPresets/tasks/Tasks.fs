@@ -45,22 +45,15 @@ type TaskPreset = {
     Tasks: Task list
 }
 
-let dummyTaskPreset = {
-    Name = "Dummy Preset"
-    CloseOtherApplications = false
-    DisableOpeningOtherApplications = false
-    HideNotifications = true
-    NotificationExceptionType = Silence
-    NotificationExceptionApplications = []
-    Tasks = []
-}
-
 let startUpPreset (taskPreset: TaskPreset) =
     taskPreset.Tasks |> List.iter startUpTask
 
-let mutable taskPresets: TaskPreset list = [ dummyTaskPreset ]
+let mutable taskPresets: TaskPreset list = []
 
-let updateTaskPreset (oldTaskPreset: TaskPreset) (newTaskPreset: TaskPreset) =
+let addPreset (taskPreset: TaskPreset) =
+    taskPresets <- taskPreset :: taskPresets
+
+let replaceTaskPreset (oldTaskPreset: TaskPreset) (newTaskPreset: TaskPreset) =
     taskPresets <-
         taskPresets
         |> List.map (fun taskPreset ->

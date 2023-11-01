@@ -22,19 +22,49 @@ let private taskPresetsSidebarView (selectedPreset: IWritable<TaskPreset option>
         ListBox.horizontalAlignment HorizontalAlignment.Left
         ListBox.dock Dock.Left
         ListBox.width 300
-        ListBox.onPointerReleased (fun _ -> printfn "Tap")
         ListBox.dataItems taskPresets
+        ListBox.contextMenu (ContextMenu.create [ ContextMenu.dataItems [ "New Task Preset" ] ])
 
         ListBox.itemTemplate (
             DataTemplateView<TaskPreset>.create (fun taskPreset ->
-                DockPanel.create [ DockPanel.children [ TextBlock.create [ TextBlock.text taskPreset.Name ] ] ])
+                DockPanel.create [
+                    DockPanel.contextMenu (
+                        ContextMenu.create [
+                            ContextMenu.dataItems [
+                                "Export Task Preset"
+                                "Rename"
+                                "Delete"
+                            ]
+                        ]
+                    )
+                    DockPanel.children [ TextBlock.create [ TextBlock.text taskPreset.Name ] ]
+                ])
         )
+
+        match selectedPreset.Current with
+        | None -> ()
+        | Some taskPreset -> ListBox.selectedItem taskPreset
 
         ListBox.onSelectedItemChanged (fun item ->
             match item with
-            | :? TaskPreset as taskPreset -> selectedPreset.Set(Some taskPreset)
+            | :? TaskPreset as taskPreset ->
+                if
+                    selectedPreset.Current.IsNone
+                    || (selectedPreset.Current.IsSome && selectedPreset.Current.Value <> taskPreset)
+                then
+                    selectedPreset.Set(Some taskPreset)
             | _ -> ())
+
     ]
+
+let private updateTaskPreset
+    (selectedPresetState: IWritable<TaskPreset option>)
+    (newTaskPresetFunc: TaskPreset -> TaskPreset)
+    =
+    let oldTaskPreset = selectedPresetState.Current.Value
+    let newTaskPreset = newTaskPresetFunc oldTaskPreset
+    replaceTaskPreset oldTaskPreset newTaskPreset
+    selectedPresetState.Set(Some newTaskPreset)
 
 let private settingsView (title: string) (view: Types.IView) =
     StackPanel.create [
@@ -50,10 +80,11 @@ let private settingsView (title: string) (view: Types.IView) =
         ]
     ]
 
-let private generalSettingsView (taskPreset: TaskPreset) =
+let private generalSettingsView (selectedPresetState: IWritable<TaskPreset option>) =
     settingsView
         "General"
         (StackPanel.create [
+            let taskPreset = selectedPresetState.Current.Value
             StackPanel.spacing 5
 
             StackPanel.children [
@@ -61,18 +92,31 @@ let private generalSettingsView (taskPreset: TaskPreset) =
                     ToggleSwitch.content "Close other applications"
                     ToggleSwitch.isChecked taskPreset.CloseOtherApplications
                     ToggleSwitch.onChecked (fun _ ->
-                        updateTaskPreset taskPreset { taskPreset with CloseOtherApplications = true })
+                        updateTaskPreset selectedPresetState (fun taskPreset -> {
+                            taskPreset with
+                                CloseOtherApplications = true
+                        }))
                     ToggleSwitch.onUnchecked (fun _ ->
-                        updateTaskPreset taskPreset { taskPreset with CloseOtherApplications = false })
+                        updateTaskPreset selectedPresetState (fun taskPreset -> {
+                            taskPreset with
+                                CloseOtherApplications = false
+                        }))
+
                 ]
 
                 ToggleSwitch.create [
                     ToggleSwitch.content "Disable opening of other applications"
                     ToggleSwitch.isChecked taskPreset.DisableOpeningOtherApplications
                     ToggleSwitch.onChecked (fun _ ->
-                        updateTaskPreset taskPreset { taskPreset with DisableOpeningOtherApplications = true })
+                        updateTaskPreset selectedPresetState (fun taskPreset -> {
+                            taskPreset with
+                                DisableOpeningOtherApplications = true
+                        }))
                     ToggleSwitch.onUnchecked (fun _ ->
-                        updateTaskPreset taskPreset { taskPreset with DisableOpeningOtherApplications = false })
+                        updateTaskPreset selectedPresetState (fun taskPreset -> {
+                            taskPreset with
+                                DisableOpeningOtherApplications = false
+                        }))
                 ]
 
                 Button.create [
@@ -84,7 +128,7 @@ let private generalSettingsView (taskPreset: TaskPreset) =
             ]
         ])
 
-let private applicationListView =
+let private applicationListView () =
     WrapPanel.create [
         WrapPanel.horizontalAlignment HorizontalAlignment.Left
         WrapPanel.children [
@@ -101,7 +145,11 @@ let private applicationListView =
         ]
     ]
 
-let private exceptionApplicationsView (taskPreset: TaskPreset) (hideNotifications: IWritable<bool>) =
+let private exceptionApplicationsView
+    (selectedPresetState: IWritable<TaskPreset option>)
+    (taskPreset: TaskPreset)
+    (hideNotifications: IWritable<bool>)
+    =
     StackPanel.create [
         StackPanel.isVisible hideNotifications.Current
         StackPanel.spacing 10
@@ -126,10 +174,10 @@ let private exceptionApplicationsView (taskPreset: TaskPreset) (hideNotification
                     match object with
                     | :? NotificationExceptionType as notificationExceptionType ->
                         if notificationExceptionType <> taskPreset.NotificationExceptionType then
-                            updateTaskPreset taskPreset {
+                            updateTaskPreset selectedPresetState (fun taskPreset -> {
                                 taskPreset with
                                     NotificationExceptionType = notificationExceptionType
-                            }
+                            })
                     | _ -> ())
 
                 ComboBox.selectedItem taskPreset.NotificationExceptionType
@@ -144,40 +192,53 @@ let private exceptionApplicationsView (taskPreset: TaskPreset) (hideNotification
                         TextBlock.text "Applications"
                     ]
 
-                    applicationListView
+                    applicationListView ()
                 ]
             ]
         ]
     ]
 
-let private notificationSettingsView (taskPreset: TaskPreset) =
+let private notificationSettingsView (selectedPresetState: IWritable<TaskPreset option>) =
     settingsView
         "Notifications"
         (Component.create (
             "notificationsView",
             fun context ->
-                let hideNotificationsState = context.useState taskPreset.HideNotifications
+                let hideNotificationsState = context.useState false
 
                 StackPanel.create [
+                    let taskPreset = selectedPresetState.Current.Value
+                    hideNotificationsState.Set taskPreset.HideNotifications
+
                     StackPanel.spacing 25
+
                     StackPanel.children [
                         ToggleSwitch.create [
                             ToggleSwitch.content "Hide Notifications"
                             ToggleSwitch.isChecked taskPreset.HideNotifications
+
                             ToggleSwitch.onChecked (fun _ ->
                                 hideNotificationsState.Set true
-                                updateTaskPreset taskPreset { taskPreset with HideNotifications = true })
+
+                                updateTaskPreset selectedPresetState (fun taskPreset -> {
+                                    taskPreset with
+                                        HideNotifications = true
+                                }))
                             ToggleSwitch.onUnchecked (fun _ ->
-                                updateTaskPreset taskPreset { taskPreset with HideNotifications = false }
+                                updateTaskPreset selectedPresetState (fun taskPreset -> {
+                                    taskPreset with
+                                        HideNotifications = false
+                                })
+
                                 hideNotificationsState.Set false)
                         ]
 
-                        exceptionApplicationsView taskPreset hideNotificationsState
+                        exceptionApplicationsView selectedPresetState taskPreset hideNotificationsState
                     ]
                 ]
         ))
 
-let private taskListView (taskPreset: TaskPreset) =
+let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
     settingsView
         "Tasks"
         (StackPanel.create [
@@ -191,7 +252,52 @@ let private taskListView (taskPreset: TaskPreset) =
                     StackPanel.children [
                         Button.create [
                             Button.content "Add Task"
-                            Button.onClick unimplemented
+                            Button.flyout (
+                                Flyout.create [
+                                    Flyout.content (
+                                        StackPanel.create [
+                                            StackPanel.children [
+                                                Popup.create []
+                                                for name in
+                                                    [
+                                                        "Browser"
+                                                        "Command Prompt"
+                                                        "System Executable"
+                                                    ] do
+                                                    Button.create [
+                                                        Button.width 150
+                                                        Button.cornerRadius 0
+                                                        Button.content name
+                                                        Button.background Media.Brushes.Transparent
+
+                                                        Button.onClick (fun _ ->
+                                                            let taskType =
+                                                                match name with
+                                                                | "Browser" -> Browser {| Urls = [] |}
+                                                                | "Command Prompt" -> CommandPrompt {| Commands = [] |}
+                                                                | _ -> SystemExecutable {| Path = "" |}
+
+                                                            updateTaskPreset selectedPresetState (fun taskPreset -> {
+                                                                taskPreset with
+                                                                    Tasks =
+                                                                        taskPreset.Tasks
+                                                                        @ [
+                                                                            {
+                                                                                Name = name + " Task"
+                                                                                TaskType = taskType
+                                                                            }
+                                                                        ]
+                                                            })
+
+
+                                                        )
+                                                    ]
+                                            ]
+                                        ]
+
+                                    )
+                                ]
+                            )
                         ]
                         Button.create [
                             Button.content "Clear all Tasks"
@@ -200,16 +306,33 @@ let private taskListView (taskPreset: TaskPreset) =
                     ]
                 ]
                 ListBox.create [
+                    let taskPreset = selectedPresetState.Current.Value
                     ListBox.cornerRadius 10
                     ListBox.dataItems taskPreset.Tasks
+
                     ListBox.itemTemplate (
-                        DataTemplateView<Task>.create (fun task -> TextBlock.create [ TextBlock.text task.Name ])
+                        DataTemplateView<Task>.create (fun task ->
+                            DockPanel.create [
+                                DockPanel.children [
+                                    TextBlock.create [
+                                        TextBlock.text task.Name
+                                        TextBlock.verticalAlignment VerticalAlignment.Center
+                                    ]
+                                    Button.create [
+                                        Button.content "X"
+                                        Button.horizontalAlignment HorizontalAlignment.Right
+                                        Button.background Media.Brushes.Transparent
+                                    ]
+                                ]
+                            ])
                     )
                 ]
             ]
         ])
 
-let private taskPresetsInformationView (taskPreset: TaskPreset) =
+let private taskPresetsInformationView (selectedPresetState: IWritable<TaskPreset option>) =
+    let taskPreset = selectedPresetState.Current.Value
+
     DockPanel.create [
         Grid.column 2
         DockPanel.children [
@@ -227,9 +350,9 @@ let private taskPresetsInformationView (taskPreset: TaskPreset) =
                                 TextBlock.horizontalAlignment HorizontalAlignment.Center
                             ]
 
-                            generalSettingsView taskPreset
-                            notificationSettingsView taskPreset
-                            taskListView taskPreset
+                            generalSettingsView selectedPresetState
+                            notificationSettingsView selectedPresetState
+                            taskListView selectedPresetState
                         ]
                     ]
                 )
@@ -250,19 +373,12 @@ let private emptyTaskPresetInformationView =
     ]
 
 
-let taskPresetView =
-    Component.create (
-        "taskPresetView",
-        fun context ->
-            let selectedPreset: IWritable<TaskPreset option> = context.useState None
-
-            DockPanel.create [
-                DockPanel.children [
-                    taskPresetsSidebarView selectedPreset
-
-                    match selectedPreset.Current with
-                    | None -> emptyTaskPresetInformationView
-                    | Some taskPreset -> taskPresetsInformationView taskPreset
-                ]
-            ]
-    )
+let taskPresetView (selectedPreset: IWritable<TaskPreset option>) =
+    DockPanel.create [
+        DockPanel.children [
+            taskPresetsSidebarView selectedPreset
+            match selectedPreset.Current with
+            | None -> emptyTaskPresetInformationView
+            | Some _ -> taskPresetsInformationView selectedPreset
+        ]
+    ]

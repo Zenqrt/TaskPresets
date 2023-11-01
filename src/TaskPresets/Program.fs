@@ -13,6 +13,7 @@ open Avalonia.Animation
 open Avalonia.Input
 open Semi.Avalonia
 open Tasks
+open Avalonia.Threading
 
 let unimplemented _ =
     printfn "This function is not implemented."
@@ -22,21 +23,31 @@ let shutdown exitCode =
     | :? IClassicDesktopStyleApplicationLifetime as desktopLifetime -> desktopLifetime.Shutdown exitCode
     | _ -> ()
 
-let fileMenuItemWithHotKey (header: string) (key: Input.KeyGesture) (func: Interactivity.RoutedEventArgs -> unit) =
+let private fileMenuItemWithHotKey
+    (header: string)
+    (key: KeyGesture)
+    (func: Interactivity.RoutedEventArgs -> unit)
+    =
     MenuItem.create [
         MenuItem.header header
         MenuItem.hotKey key
         MenuItem.onClick func
     ]
 
-let fileMenuItem (header: string) (func: Interactivity.RoutedEventArgs -> unit) =
+let private fileMenuItem (header: string) (func: Interactivity.RoutedEventArgs -> unit) =
     MenuItem.create [
         MenuItem.header header
         MenuItem.onClick func
     ]
 
-let newTaskPresetView () =
-    Component(fun _ ->
+type NewTaskPresetResult =
+    | Cancelled
+    | Success of {| TaskPreset: TaskPreset |}
+
+let private newTaskPresetView (window: Window) =
+    Component(fun context ->
+        let taskPresetName = context.useState ""
+
         DockPanel.create [
             DockPanel.children [
                 StackPanel.create [
@@ -53,6 +64,7 @@ let newTaskPresetView () =
                                 TextBox.create [
                                     TextBox.horizontalAlignment HorizontalAlignment.Center
                                     TextBox.width 200
+                                    TextBox.onTextChanged taskPresetName.Set
                                 ]
                             ]
                         ]
@@ -66,11 +78,28 @@ let newTaskPresetView () =
                                     Button.width 100
                                     Button.horizontalAlignment HorizontalAlignment.Right
                                     Button.content "OK"
+
+                                    Button.onClick (fun _ ->
+                                        window.Close(
+                                            Success {|
+                                                TaskPreset = {
+                                                    Name = taskPresetName.Current
+                                                    CloseOtherApplications = false
+                                                    DisableOpeningOtherApplications = false
+                                                    HideNotifications = false
+                                                    NotificationExceptionType = Allow
+                                                    NotificationExceptionApplications = []
+                                                    Tasks = []
+                                                }
+                                            |}
+                                        ))
                                 ]
                                 Button.create [
                                     Button.width 100
                                     Button.horizontalAlignment HorizontalAlignment.Right
                                     Button.content "Cancel"
+
+                                    Button.onClick (fun _ -> window.Close Cancelled)
                                 ]
                             ]
                         ]
@@ -79,25 +108,40 @@ let newTaskPresetView () =
             ]
         ])
 
-let newTaskPresetWindow () =
+let private newTaskPresetWindow () =
     let window = Window()
     window.Title <- "New Task Preset"
     window.CanResize <- false
     window.Width <- 300
     window.Height <- 150
-    window.Content <- newTaskPresetView ()
+    window.Content <- newTaskPresetView window
 
     match Views.mainWindow with
     | None -> null
-    | Some mainWindow -> window.ShowDialog mainWindow
+    | Some mainWindow -> window.ShowDialog<NewTaskPresetResult> mainWindow
 
-let fileMenu =
+let private handleNewTaskPreset () : Async<NewTaskPresetResult> =
+    Dispatcher.UIThread.InvokeAsync<NewTaskPresetResult>(
+        Func<Threading.Tasks.Task<NewTaskPresetResult>>(fun _ -> task { return! newTaskPresetWindow () })
+    )
+    |> Async.AwaitTask
+
+let private fileMenu (selectedPreset: IWritable<TaskPreset option>) =
     MenuItem.create [
         MenuItem.header "File"
 
         MenuItem.viewItems [
             fileMenuItemWithHotKey "New Task Preset" (KeyGesture(Key.N, KeyModifiers.Control)) (fun _ ->
-                ignore (newTaskPresetWindow ()))
+                handleNewTaskPreset ()
+                |> Async.map (fun result ->
+                    match result with
+                    | Cancelled -> ()
+                    | Success result ->
+                        let taskPreset = result.TaskPreset
+
+                        addPreset taskPreset
+                        selectedPreset.Set(Some taskPreset))
+                |> Async.Start)
             fileMenuItemWithHotKey "Save Task Preset" (KeyGesture(Key.S, KeyModifiers.Control)) unimplemented
             fileMenuItem "Import Task Presets" unimplemented
             fileMenuItem "Export Task Presets" unimplemented
@@ -105,19 +149,21 @@ let fileMenu =
         ]
     ]
 
-let menuView =
+let private menuView (selectedPreset: IWritable<TaskPreset option>) =
     Menu.create [
         Menu.dock Dock.Top
 
-        Menu.viewItems [ fileMenu ]
+        Menu.viewItems [ fileMenu selectedPreset ]
     ]
 
-let view () =
-    Component(fun _ ->
+let private view () =
+    Component(fun context ->
+        let selectedPresetState: IWritable<TaskPreset option> = context.useState None
+
         DockPanel.create [
             DockPanel.children [
-                menuView
-                TaskViews.taskPresetView
+                menuView selectedPresetState
+                TaskViews.taskPresetView selectedPresetState
             ]
         ])
 
@@ -129,7 +175,6 @@ type MainWindow() =
         base.Content <- view ()
         base.MinWidth <- 1200
         base.MinHeight <- 800
-
         base.Width <- base.MinWidth
         base.Height <- base.MinHeight
 
