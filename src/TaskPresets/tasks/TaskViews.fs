@@ -23,6 +23,7 @@ let private taskPresetsSidebarView (selectedPreset: IWritable<TaskPreset option>
         ListBox.dock Dock.Left
         ListBox.width 300
         ListBox.dataItems taskPresets
+        ListBox.opacity 0.75
         ListBox.contextMenu (ContextMenu.create [ ContextMenu.dataItems [ "New Task Preset" ] ])
 
         ListBox.itemTemplate (
@@ -305,28 +306,52 @@ let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
                         ]
                     ]
                 ]
-                ListBox.create [
+                StackPanel.create [
                     let taskPreset = selectedPresetState.Current.Value
-                    ListBox.cornerRadius 10
-                    ListBox.dataItems taskPreset.Tasks
 
-                    ListBox.itemTemplate (
-                        DataTemplateView<Task>.create (fun task ->
-                            DockPanel.create [
-                                DockPanel.children [
-                                    TextBlock.create [
-                                        TextBlock.text task.Name
-                                        TextBlock.verticalAlignment VerticalAlignment.Center
+                    StackPanel.children [
+                        for task in taskPreset.Tasks do
+                            Button.create [
+                                Button.content (
+                                    DockPanel.create [
+                                        DockPanel.children [
+                                            TextBlock.create [
+                                                TextBlock.text task.Name
+                                                TextBlock.verticalAlignment VerticalAlignment.Center
+                                            ]
+                                            Button.create [
+                                                Button.content "X"
+                                                Button.horizontalAlignment HorizontalAlignment.Right
+                                                Button.background Media.Brushes.Transparent
+                                            ]
+                                        ]
                                     ]
-                                    Button.create [
-                                        Button.content "X"
-                                        Button.horizontalAlignment HorizontalAlignment.Right
-                                        Button.background Media.Brushes.Transparent
-                                    ]
-                                ]
-                            ])
-                    )
+                                )
+                            ]
+                    ]
                 ]
+            // ListBox.create [
+            //     let taskPreset = selectedPresetState.Current.Value
+            //     ListBox.cornerRadius 10
+            //     ListBox.dataItems taskPreset.Tasks
+
+            //     ListBox.itemTemplate (
+            //         DataTemplateView<Task>.create (fun task ->
+            //             DockPanel.create [
+            //                 DockPanel.children [
+            //                     TextBlock.create [
+            //                         TextBlock.text task.Name
+            //                         TextBlock.verticalAlignment VerticalAlignment.Center
+            //                     ]
+            //                     Button.create [
+            //                         Button.content "X"
+            //                         Button.horizontalAlignment HorizontalAlignment.Right
+            //                         Button.background Media.Brushes.Transparent
+            //                     ]
+            //                 ]
+            //             ])
+            //     )
+            // ]
             ]
         ])
 

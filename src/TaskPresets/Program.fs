@@ -13,6 +13,7 @@ open Avalonia.Animation
 open Avalonia.Input
 open Semi.Avalonia
 open Tasks
+open TaskPresets.DSL
 open Avalonia.Threading
 
 let unimplemented _ =
@@ -23,11 +24,7 @@ let shutdown exitCode =
     | :? IClassicDesktopStyleApplicationLifetime as desktopLifetime -> desktopLifetime.Shutdown exitCode
     | _ -> ()
 
-let private fileMenuItemWithHotKey
-    (header: string)
-    (key: KeyGesture)
-    (func: Interactivity.RoutedEventArgs -> unit)
-    =
+let private fileMenuItemWithHotKey (header: string) (key: KeyGesture) (func: Interactivity.RoutedEventArgs -> unit) =
     MenuItem.create [
         MenuItem.header header
         MenuItem.hotKey key
@@ -152,7 +149,6 @@ let private fileMenu (selectedPreset: IWritable<TaskPreset option>) =
 let private menuView (selectedPreset: IWritable<TaskPreset option>) =
     Menu.create [
         Menu.dock Dock.Top
-
         Menu.viewItems [ fileMenu selectedPreset ]
     ]
 
@@ -160,10 +156,24 @@ let private view () =
     Component(fun context ->
         let selectedPresetState: IWritable<TaskPreset option> = context.useState None
 
-        DockPanel.create [
-            DockPanel.children [
-                menuView selectedPresetState
-                TaskViews.taskPresetView selectedPresetState
+        Grid.create [
+            Grid.children [
+                // ExperimentalAcrylicBorder.create [
+                //     ExperimentalAcrylicBorder.material (
+                //         Media.ExperimentalAcrylicMaterial(
+                //             BackgroundSource = Media.AcrylicBackgroundSource.Digger,
+                //             TintColor = Media.Colors.Black,
+                //             TintOpacity = 1.27,
+                //             MaterialOpacity = 0.65
+                //         )
+                //     )
+                // ]
+                DockPanel.create [
+                    DockPanel.children [
+                        menuView selectedPresetState
+                        TaskViews.taskPresetView selectedPresetState
+                    ]
+                ]
             ]
         ])
 
@@ -177,6 +187,10 @@ type MainWindow() =
         base.MinHeight <- 800
         base.Width <- base.MinWidth
         base.Height <- base.MinHeight
+        // base.Background <- Media.Brushes.Transparent
+        // base.TransparencyLevelHint <- [ WindowTransparencyLevel.Mica ]
+        base.WindowStartupLocation <- WindowStartupLocation.CenterScreen
+
 
 
 type App() =
@@ -193,7 +207,7 @@ type App() =
         )
 
         this.Styles.Add theme
-        this.RequestedThemeVariant <- Styling.ThemeVariant.Dark
+        this.RequestedThemeVariant <- Styling.ThemeVariant.Light
 
     override this.OnFrameworkInitializationCompleted() =
         match this.ApplicationLifetime with
@@ -206,4 +220,5 @@ let main (args: string[]) =
         .Configure<App>()
         .UsePlatformDetect()
         .UseSkia()
+        .With(new Win32PlatformOptions())
         .StartWithClassicDesktopLifetime(args)
