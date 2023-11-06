@@ -207,7 +207,7 @@ type App() =
         )
 
         this.Styles.Add theme
-        this.RequestedThemeVariant <- Styling.ThemeVariant.Light
+        this.RequestedThemeVariant <- Styling.ThemeVariant.Dark
 
     override this.OnFrameworkInitializationCompleted() =
         match this.ApplicationLifetime with

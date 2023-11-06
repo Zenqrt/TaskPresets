@@ -55,7 +55,7 @@ let private handleFileSelect (topLevel: TopLevel) : Async<string option> =
 
 let private chooseExecutableButtonView (window: Window) (selectedFile: IWritable<string option>) =
     Button.create [
-        Button.content "Choose .exe"
+        Button.content "Find .exe"
         Button.width 100
         Button.onClick (fun _ ->
             let topLevel = TopLevel.GetTopLevel window

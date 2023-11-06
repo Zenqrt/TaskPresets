@@ -239,6 +239,67 @@ let private notificationSettingsView (selectedPresetState: IWritable<TaskPreset 
                 ]
         ))
 
+let private addTaskFlyout selectedPresetState =
+    Flyout.create [
+        Flyout.content (
+            StackPanel.create [
+                StackPanel.children [
+                    Popup.create []
+                    for name in
+                        [
+                            "Browser"
+                            "Command Prompt"
+                            "System Executable"
+                        ] do
+                        Button.create [
+                            Button.width 150
+                            Button.cornerRadius 0
+                            Button.content name
+                            Button.background Media.Brushes.Transparent
+
+                            Button.onClick (fun _ ->
+                                let taskType =
+                                    match name with
+                                    | "Browser" -> Browser {| Urls = [] |}
+                                    | "Command Prompt" -> CommandPrompt {| Commands = [] |}
+                                    | _ -> SystemExecutable {| Path = "" |}
+
+                                updateTaskPreset selectedPresetState (fun taskPreset -> {
+                                    taskPreset with
+                                        Tasks =
+                                            taskPreset.Tasks
+                                            @ [
+                                                {
+                                                    Name = name + " Task"
+                                                    TaskType = taskType
+                                                }
+                                            ]
+                                })
+
+
+                            )
+                        ]
+                ]
+            ]
+
+        )
+    ]
+
+let private taskInformationView () =
+    Component(fun _ ->
+        DockPanel.create [
+
+        ])
+
+let private taskInformationWindow (task: Task) =
+    let window = Window()
+    window.Title <- task.Name + " Task Information"
+    window.Content <- taskInformationView ()
+
+    match Views.mainWindow with
+    | Some mainWindow -> window.ShowDialog mainWindow
+    | None -> null
+
 let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
     settingsView
         "Tasks"
@@ -253,52 +314,7 @@ let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
                     StackPanel.children [
                         Button.create [
                             Button.content "Add Task"
-                            Button.flyout (
-                                Flyout.create [
-                                    Flyout.content (
-                                        StackPanel.create [
-                                            StackPanel.children [
-                                                Popup.create []
-                                                for name in
-                                                    [
-                                                        "Browser"
-                                                        "Command Prompt"
-                                                        "System Executable"
-                                                    ] do
-                                                    Button.create [
-                                                        Button.width 150
-                                                        Button.cornerRadius 0
-                                                        Button.content name
-                                                        Button.background Media.Brushes.Transparent
-
-                                                        Button.onClick (fun _ ->
-                                                            let taskType =
-                                                                match name with
-                                                                | "Browser" -> Browser {| Urls = [] |}
-                                                                | "Command Prompt" -> CommandPrompt {| Commands = [] |}
-                                                                | _ -> SystemExecutable {| Path = "" |}
-
-                                                            updateTaskPreset selectedPresetState (fun taskPreset -> {
-                                                                taskPreset with
-                                                                    Tasks =
-                                                                        taskPreset.Tasks
-                                                                        @ [
-                                                                            {
-                                                                                Name = name + " Task"
-                                                                                TaskType = taskType
-                                                                            }
-                                                                        ]
-                                                            })
-
-
-                                                        )
-                                                    ]
-                                            ]
-                                        ]
-
-                                    )
-                                ]
-                            )
+                            Button.flyout (addTaskFlyout selectedPresetState)
                         ]
                         Button.create [
                             Button.content "Clear all Tasks"
@@ -306,52 +322,28 @@ let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
                         ]
                     ]
                 ]
-                StackPanel.create [
+                ListBox.create [
                     let taskPreset = selectedPresetState.Current.Value
+                    ListBox.cornerRadius 10
+                    ListBox.dataItems taskPreset.Tasks
 
-                    StackPanel.children [
-                        for task in taskPreset.Tasks do
-                            Button.create [
-                                Button.content (
-                                    DockPanel.create [
-                                        DockPanel.children [
-                                            TextBlock.create [
-                                                TextBlock.text task.Name
-                                                TextBlock.verticalAlignment VerticalAlignment.Center
-                                            ]
-                                            Button.create [
-                                                Button.content "X"
-                                                Button.horizontalAlignment HorizontalAlignment.Right
-                                                Button.background Media.Brushes.Transparent
-                                            ]
-                                        ]
+                    ListBox.itemTemplate (
+                        DataTemplateView<Task>.create (fun task ->
+                            DockPanel.create [
+                                DockPanel.children [
+                                    TextBlock.create [
+                                        TextBlock.text task.Name
+                                        TextBlock.verticalAlignment VerticalAlignment.Center
                                     ]
-                                )
-                            ]
-                    ]
+                                    Button.create [
+                                        Button.content "X"
+                                        Button.horizontalAlignment HorizontalAlignment.Right
+                                        Button.background Media.Brushes.Transparent
+                                    ]
+                                ]
+                            ])
+                    )
                 ]
-            // ListBox.create [
-            //     let taskPreset = selectedPresetState.Current.Value
-            //     ListBox.cornerRadius 10
-            //     ListBox.dataItems taskPreset.Tasks
-
-            //     ListBox.itemTemplate (
-            //         DataTemplateView<Task>.create (fun task ->
-            //             DockPanel.create [
-            //                 DockPanel.children [
-            //                     TextBlock.create [
-            //                         TextBlock.text task.Name
-            //                         TextBlock.verticalAlignment VerticalAlignment.Center
-            //                     ]
-            //                     Button.create [
-            //                         Button.content "X"
-            //                         Button.horizontalAlignment HorizontalAlignment.Right
-            //                         Button.background Media.Brushes.Transparent
-            //                     ]
-            //                 ]
-            //             ])
-            //     )
-            // ]
             ]
         ])
 
