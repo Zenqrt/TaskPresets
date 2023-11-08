@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="DSL/ExperimentalAcrylicBorder.fs" />
+    <Compile Include="bindings/ExperimentalAcrylicBorder.fs" />
     <Compile Include="Async.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="tasks/Tasks.fs" />
