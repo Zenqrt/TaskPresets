@@ -13,7 +13,6 @@ type Task = {
     TaskType: TaskType
 }
 
-
 let private startUpTask (task: Task) =
     match task.TaskType with
     | Browser browser -> browser.Urls |> List.iter (fun url -> Process.Start url |> ignore)

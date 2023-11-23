@@ -285,26 +285,135 @@ let private addTaskFlyout selectedPresetState =
         )
     ]
 
-let private taskInformationView () =
-    Component(fun _ ->
-        DockPanel.create [
+let private browserTaskInformationView (taskType: {| Urls: string list |}) =
+    DockPanel.create [
+        DockPanel.children [
+            StackPanel.create [
+                StackPanel.children [
+                    match taskType with
+                    | Browser browser ->
+                        StackPanel.create [
+                            StackPanel.children [
+                                StackPanel.create [
+                                    StackPanel.orientation Orientation.Horizontal
+                                    StackPanel.spacing 15
 
+                                    StackPanel.children [
+                                        Button.create [ Button.content "Add URL" ]
+                                        Button.create [
+                                            Button.content "Clear all URLs"
+                                            Button.onClick unimplemented
+                                        ]
+                                    ]
+                                ]
+                                StackPanel.create [ StackPanel.children [ TextBox.create [ TextBox.watermark "URL" ] ] ]
+                            ]
+                        ]
+                    | _ -> ()
+                ]
+            ]
+        ]
+    ]
+
+let private taskInformationView (task: Task) =
+    Component(fun context ->
+        let selectedTaskType = context.useState (Some task.TaskType)
+
+        DockPanel.create [
+            DockPanel.children [
+                StackPanel.create [
+                    StackPanel.children [
+                        ComboBox.create [
+                            ComboBox.width 200
+                            ComboBox.dataItems [
+                                "Browser"
+                                "Command Prompt"
+                                "System Executable"
+                            ]
+                            ComboBox.selectedIndex 0
+                            ComboBox.onSelectedItemChanged (fun item ->
+                                match item with
+                                | :? string as taskTypeString ->
+                                    match taskTypeString with
+                                    | "Browser" -> Browser {| Urls = [] |}
+                                    | "Command Prompt" -> CommandPrompt {| Commands = [] |}
+                                    | _ -> SystemExecutable {| Path = "" |}
+                                    |> Some
+                                    |> selectedTaskType.Set
+                                | _ -> ())
+                        ]
+
+                        match selectedTaskType.Current with
+                        | None -> ()
+                        | Some taskType ->
+                            match taskType with
+                            | Browser browser -> browserTaskInformationView (browser)
+                            | CommandPrompt _ -> ()
+                            | SystemExecutable _ -> ()
+                    ]
+                ]
+            ]
         ])
 
 let private taskInformationWindow (task: Task) =
     let window = Window()
     window.Title <- task.Name + " Task Information"
-    window.Content <- taskInformationView ()
+    window.Content <- taskInformationView task
+    window.Height <- 400
+    window.Width <- 700
 
     match Views.mainWindow with
     | Some mainWindow -> window.ShowDialog mainWindow
     | None -> null
 
+let private tasksComponent (selectedPresetState: IWritable<TaskPreset option>) =
+    StackPanel.create [
+        StackPanel.children [
+            let taskPreset = selectedPresetState.Current.Value
+
+            for index in 0 .. taskPreset.Tasks.Length - 1 do
+                let task = taskPreset.Tasks[index]
+
+                Button.create [
+                    Button.padding 20
+                    Button.height 75
+                    Button.horizontalAlignment HorizontalAlignment.Stretch
+
+                    Button.onClick (fun _ -> taskInformationWindow task |> ignore)
+
+                    Button.content (
+                        DockPanel.create [
+                            DockPanel.children [
+                                TextBlock.create [
+                                    TextBlock.text task.Name
+                                    TextBlock.verticalAlignment VerticalAlignment.Center
+                                ]
+                                Button.create [
+                                    Button.content "X"
+                                    Button.horizontalAlignment HorizontalAlignment.Right
+                                    Button.background Media.Brushes.Transparent
+                                    Button.onClick (fun _ ->
+                                        updateTaskPreset selectedPresetState (fun taskPreset -> {
+                                            taskPreset with
+                                                Tasks =
+                                                    taskPreset.Tasks
+                                                    |> List.mapi (fun i element -> (i <> index, element))
+                                                    |> List.filter fst
+                                                    |> List.map snd
+                                        }))
+                                ]
+                            ]
+                        ]
+                    )
+                ]
+        ]
+    ]
+
 let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
     settingsView
         "Tasks"
         (StackPanel.create [
-            StackPanel.spacing 5
+            StackPanel.spacing 10
 
             StackPanel.children [
                 StackPanel.create [
@@ -318,32 +427,12 @@ let private taskListView (selectedPresetState: IWritable<TaskPreset option>) =
                         ]
                         Button.create [
                             Button.content "Clear all Tasks"
-                            Button.onClick unimplemented
+                            Button.onClick (fun _ ->
+                                updateTaskPreset selectedPresetState (fun taskPreset -> { taskPreset with Tasks = [] }))
                         ]
                     ]
                 ]
-                ListBox.create [
-                    let taskPreset = selectedPresetState.Current.Value
-                    ListBox.cornerRadius 10
-                    ListBox.dataItems taskPreset.Tasks
-
-                    ListBox.itemTemplate (
-                        DataTemplateView<Task>.create (fun task ->
-                            DockPanel.create [
-                                DockPanel.children [
-                                    TextBlock.create [
-                                        TextBlock.text task.Name
-                                        TextBlock.verticalAlignment VerticalAlignment.Center
-                                    ]
-                                    Button.create [
-                                        Button.content "X"
-                                        Button.horizontalAlignment HorizontalAlignment.Right
-                                        Button.background Media.Brushes.Transparent
-                                    ]
-                                ]
-                            ])
-                    )
-                ]
+                tasksComponent selectedPresetState
             ]
         ])
 
