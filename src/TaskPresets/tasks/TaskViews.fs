@@ -285,31 +285,43 @@ let private addTaskFlyout selectedPresetState =
         )
     ]
 
-let private browserTaskInformationView (taskType: {| Urls: string list |}) =
+let private browserTaskInformationView
+    (taskType: {| Urls: string list |})
+    (selectedTaskType: IWritable<TaskType option>)
+    =
     DockPanel.create [
         DockPanel.children [
             StackPanel.create [
                 StackPanel.children [
-                    match taskType with
-                    | Browser browser ->
-                        StackPanel.create [
-                            StackPanel.children [
-                                StackPanel.create [
-                                    StackPanel.orientation Orientation.Horizontal
-                                    StackPanel.spacing 15
+                    StackPanel.create [
+                        StackPanel.children [
+                            StackPanel.create [
+                                StackPanel.orientation Orientation.Horizontal
+                                StackPanel.spacing 15
 
-                                    StackPanel.children [
-                                        Button.create [ Button.content "Add URL" ]
-                                        Button.create [
-                                            Button.content "Clear all URLs"
-                                            Button.onClick unimplemented
-                                        ]
+                                StackPanel.children [
+                                    Button.create [
+                                        Button.content "Add URL"
+                                    // Button.onClick (fun _ -> {
+                                    // })
+                                    ]
+                                    Button.create [
+                                        Button.content "Clear all URLs"
+                                        Button.onClick unimplemented
                                     ]
                                 ]
-                                StackPanel.create [ StackPanel.children [ TextBox.create [ TextBox.watermark "URL" ] ] ]
+                            ]
+                            StackPanel.create [
+                                StackPanel.children [
+                                    for url in taskType.Urls do
+                                        TextBox.create [
+                                            TextBox.text url
+                                            TextBox.watermark "URL"
+                                        ]
+                                ]
                             ]
                         ]
-                    | _ -> ()
+                    ]
                 ]
             ]
         ]
@@ -347,7 +359,7 @@ let private taskInformationView (task: Task) =
                         | None -> ()
                         | Some taskType ->
                             match taskType with
-                            | Browser browser -> browserTaskInformationView (browser)
+                            | Browser browser -> ()
                             | CommandPrompt _ -> ()
                             | SystemExecutable _ -> ()
                     ]
